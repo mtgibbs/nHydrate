@@ -430,29 +430,29 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Contexts
             sb.AppendLine();
             #endregion
 
-            #region Setup ignores for Enum properties
-            sb.AppendLine("			#region Ignore Enum Properties");
-            sb.AppendLine();
-            foreach (var table in _model.Database.Tables.Where(x => x.Generated && !x.AssociativeTable && (x.TypedTable != Models.TypedTableConstants.EnumOnly)).OrderBy(x => x.Name))
-            {
-                foreach (var column in table.GetColumns().Where(x => x.Generated).OrderBy(x => x.Name))
-                {
-                    string pascalRoleName;
-                    if (table.IsColumnRelatedToTypeTable(column, out pascalRoleName) || (column.PrimaryKey && table.TypedTable != TypedTableConstants.None))
-                    {
-                        var typeTable = table.GetRelatedTypeTableByColumn(column, out pascalRoleName);
-                        if (typeTable == null) typeTable = table;
-                        if (typeTable != null)
-                        {
-                            sb.AppendLine("			modelBuilder.Entity<" + table.PascalName + ">().Ignore(t => t." + pascalRoleName + typeTable.PascalName + "Value);");
-                        }
-                    }
-                }
-            }
-            sb.AppendLine();
-            sb.AppendLine("			#endregion");
-            sb.AppendLine();
-            #endregion
+            //#region Setup ignores for Enum properties
+            //sb.AppendLine("			#region Ignore Enum Properties");
+            //sb.AppendLine();
+            //foreach (var table in _model.Database.Tables.Where(x => x.Generated && !x.AssociativeTable && (x.TypedTable != Models.TypedTableConstants.EnumOnly)).OrderBy(x => x.Name))
+            //{
+            //    foreach (var column in table.GetColumns().Where(x => x.Generated).OrderBy(x => x.Name))
+            //    {
+            //        string pascalRoleName;
+            //        if (table.IsColumnRelatedToTypeTable(column, out pascalRoleName) || (column.PrimaryKey && table.TypedTable != TypedTableConstants.None))
+            //        {
+            //            var typeTable = table.GetRelatedTypeTableByColumn(column, out pascalRoleName);
+            //            if (typeTable == null) typeTable = table;
+            //            if (typeTable != null)
+            //            {
+            //                sb.AppendLine("			modelBuilder.Entity<" + table.PascalName + ">().Ignore(t => t." + pascalRoleName + typeTable.PascalName + "Value);");
+            //            }
+            //        }
+            //    }
+            //}
+            //sb.AppendLine();
+            //sb.AppendLine("			#endregion");
+            //sb.AppendLine();
+            //#endregion
 
             #region Create annotations for relationships
             sb.AppendLine("			#region Relations");

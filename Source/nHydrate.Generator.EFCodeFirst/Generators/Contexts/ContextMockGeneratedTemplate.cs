@@ -101,6 +101,16 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Contexts
                         {
                             var column = cellEntry.ColumnRef.Object as Column;
 
+                            #region Type table
+                            string pascalRoleName;
+                            Table typeTable = null;
+                            if (table.IsColumnRelatedToTypeTable(column, out pascalRoleName) || (column.PrimaryKey && table.TypedTable != TypedTableConstants.None))
+                            {
+                                typeTable = table.GetRelatedTypeTableByColumn(column, out pascalRoleName);
+                                if (typeTable == null) typeTable = table;
+                            }
+                            #endregion
+
                             // When mocking, need to check to see if the user defined a CodeFacade for static data
                             var columnName = !string.IsNullOrWhiteSpace(column.CodeFacade) ? column.CodeFacade : column.Name;
 
@@ -131,17 +141,20 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Contexts
                                         case "1":
                                             sqlValue = "true";
                                             break;
-                                        
                                         case "false":
                                         case "0":
                                         default:
                                             sqlValue = "false";
                                             break;
                                     }
-                                    
                                     valueList.Add(columnName + " = " + sqlValue);
                                 }
-                                else
+                                else if (typeTable != null)
+                                {
+                                    //Convert to enum
+                                    valueList.Add(columnName + " = (" + typeTable.PascalName + "Constants)(" + sqlValue + ")");
+                                }
+                                else //string value
                                 {
                                     valueList.Add(columnName + " = " + sqlValue);
                                 }

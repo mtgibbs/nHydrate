@@ -80,6 +80,7 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
             try
             {
                 nHydrate.Generator.GenerationHelper.AppendCopyrightInCode(sb, _model);
+                sb.AppendLine("#pragma warning disable 0168, 0162, 0472");
                 this.AppendUsingStatements();
                 sb.AppendLine("namespace " + this.GetLocalNamespace() + ".Entity");
                 sb.AppendLine("{");
@@ -88,6 +89,7 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                 sb.AppendLine();
                 this.AppendMetaData();
                 sb.AppendLine();
+                sb.AppendLine("#pragma warning restore 0168, 0162, 0472");
             }
             catch (Exception ex)
             {
@@ -327,15 +329,6 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                 sb.AppendLine("			this." + _item.PrimaryKeyColumns[0].PascalName + " = Guid.NewGuid();");
             sb.Append(this.SetInitialValues("this"));
 
-            //if (_item.AllowCreateAudit)
-            //{
-            //    sb.AppendLine("			this." + _model.Database.CreatedDatePascalName + " = DateTime.Now;");
-            //}
-            //if (_item.AllowModifiedAudit)
-            //{
-            //    sb.AppendLine("			this." + _model.Database.ModifiedDateColumnName + " = DateTime.Now;");
-            //}
-
             sb.AppendLine();
             sb.AppendLine("		}");
             sb.AppendLine();
@@ -347,8 +340,8 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                 sb.AppendLine("		/// Initializes a new instance of the " + this.GetLocalNamespace() + ".Entity." + _item.PascalName + " class with a defined primary key");
                 sb.AppendLine("		/// </summary>");
                 sb.Append("		" + scope + " " + _item.PascalName + "(");
-                int index = 0;
-                foreach (Column pkColumn in _item.PrimaryKeyColumns.OrderBy(x => x.PascalName))
+                var index = 0;
+                foreach (var pkColumn in _item.PrimaryKeyColumns.OrderBy(x => x.PascalName).ToList())
                 {
                     sb.Append(pkColumn.GetCodeType() + " " + pkColumn.CamelName);
                     if (index < _item.PrimaryKeyColumns.Count - 1)
@@ -359,9 +352,22 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
 
                 sb.AppendLine("			: this()");
                 sb.AppendLine("		{");
-                foreach (Column pkColumn in _item.PrimaryKeyColumns.OrderBy(x => x.PascalName))
+                foreach (var pkColumn in _item.PrimaryKeyColumns.OrderBy(x => x.PascalName).ToList())
                 {
-                    sb.AppendLine("			this." + pkColumn.PascalName + " = " + pkColumn.CamelName + ";");
+                    #region Type table
+                    string pascalRoleName;
+                    Table typeTable = null;
+                    if (_item.IsColumnRelatedToTypeTable(pkColumn, out pascalRoleName) || (pkColumn.PrimaryKey && _item.TypedTable != TypedTableConstants.None))
+                    {
+                        typeTable = _item.GetRelatedTypeTableByColumn(pkColumn, out pascalRoleName);
+                        if (typeTable == null) typeTable = _item;
+                    }
+                    #endregion
+
+                    if (typeTable == null)
+                        sb.AppendLine("			this." + pkColumn.PascalName + " = " + pkColumn.CamelName + ";");
+                    else
+                        sb.AppendLine("			this." + pkColumn.PascalName + " = (" + typeTable.PascalName + "Constants)(" + pkColumn.CamelName + ");");
                 }
                 sb.AppendLine("		}");
                 sb.AppendLine();
@@ -461,24 +467,24 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                 {
                     typeTable = _item.GetRelatedTypeTableByColumn(column, out pascalRoleName);
                     if (typeTable == null) typeTable = _item;
-                    if (typeTable != null)
-                    {
-                        var nullSuffix = string.Empty;
-                        if (column.AllowNull)
-                            nullSuffix = "?";
+                    //    if (typeTable != null)
+                    //    {
+                    //        var nullSuffix = string.Empty;
+                    //        if (column.AllowNull)
+                    //            nullSuffix = "?";
 
-                        sb.AppendLine("		/// <summary>");
-                        sb.AppendLine("		/// This property is a wrapper for the typed enumeration for the '" + column.PascalName + "' field.");
-                        sb.AppendLine("		/// </summary>");
-                        sb.AppendLine("		[System.ComponentModel.DataAnnotations.Schema.NotMapped()]");
-                        sb.AppendLine("		[System.Diagnostics.DebuggerNonUserCode()]");
-                        sb.AppendLine("		public virtual " + this.GetLocalNamespace() + "." + typeTable.PascalName + "Constants" + nullSuffix + " " + pascalRoleName + typeTable.PascalName + "Value");
-                        sb.AppendLine("		{");
-                        sb.AppendLine("			get { return (" + this.GetLocalNamespace() + "." + typeTable.PascalName + "Constants" + nullSuffix + ")this." + column.PascalName + "; }");
-                        sb.AppendLine("			set { this." + column.PascalName + " = (" + column.GetCodeType(true) + ")value; }");
-                        sb.AppendLine("		}");
-                        sb.AppendLine();
-                    }
+                    //        sb.AppendLine("		/// <summary>");
+                    //        sb.AppendLine("		/// This property is a wrapper for the typed enumeration for the '" + column.PascalName + "' field.");
+                    //        sb.AppendLine("		/// </summary>");
+                    //        sb.AppendLine("		[System.ComponentModel.DataAnnotations.Schema.NotMapped()]");
+                    //        sb.AppendLine("		[System.Diagnostics.DebuggerNonUserCode()]");
+                    //        sb.AppendLine("		public virtual " + this.GetLocalNamespace() + "." + typeTable.PascalName + "Constants" + nullSuffix + " " + pascalRoleName + typeTable.PascalName + "Value");
+                    //        sb.AppendLine("		{");
+                    //        sb.AppendLine("			get { return (" + this.GetLocalNamespace() + "." + typeTable.PascalName + "Constants" + nullSuffix + ")this." + column.PascalName + "; }");
+                    //        sb.AppendLine("			set { this." + column.PascalName + " = (" + column.GetCodeType(true) + ")value; }");
+                    //        sb.AppendLine("		}");
+                    //        sb.AppendLine();
+                    //    }
                 }
 
                 if (column.PrimaryKey && _item.ParentTable != null)
@@ -556,10 +562,12 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                     if (column.ComputedColumn)
                         propertySetterScope = "internal ";
 
+                    //For type tables use the enum
                     var codeType = column.GetCodeType();
-                    //if (_item.IsColumnRelatedToTypeTable(column, out pascalRoleName) || (column.PrimaryKey && _item.TypedTable != TypedTableConstants.None))
-                    //{
-                    //}
+                    if (typeTable != null)
+                    {
+                        codeType = typeTable.PascalName + "Constants" + (column.AllowNull ? "?" : string.Empty);
+                    }
 
                     sb.AppendLine("		public virtual " + codeType + " " + column.PascalName);
                     sb.AppendLine("		{");
@@ -594,7 +602,7 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                         foreach (RowEntry rowEntry in typeTable.StaticData)
                         {
                             var idValue = rowEntry.GetCodeIdValue(typeTable);
-                            sb.AppendLine("					case " + idValue + ":");
+                            sb.AppendLine("					case (" + typeTable.PascalName + "Constants)(" + idValue + "):");
                         }
                         sb.AppendLine("						break;");
                         sb.AppendLine("					default: throw new Exception(string.Format(GlobalValues.ERROR_INVALID_ENUM, value.ToString(), \"" + _item.PascalName + "." + column.PascalName + "\"));");
@@ -829,9 +837,24 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                 }
                 else
                 {
+                    string pascalRoleName;
+                    Table typeTable = null;
+                    if (_item.IsColumnRelatedToTypeTable(column, out pascalRoleName) || (column.PrimaryKey && _item.TypedTable != TypedTableConstants.None))
+                    {
+                        typeTable = _item.GetRelatedTypeTableByColumn(column, out pascalRoleName);
+                        if (typeTable == null) typeTable = _item;
+                    }
+
+                    //For type tables use the enum
+                    var codeType = column.GetCodeType();
+                    if (typeTable != null)
+                    {
+                        codeType = typeTable.PascalName + "Constants" + (column.AllowNull ? "?" : string.Empty);
+                    }
+
                     sb.AppendLine("		/// <summary />");
-                    sb.AppendLine("		protected " + column.GetCodeType() + " _" + column.CamelName + ";");
-                    this.AppendPropertyEventDeclarations(column, column.GetCodeType());
+                    sb.AppendLine("		protected " + codeType + " _" + column.CamelName + ";");
+                    this.AppendPropertyEventDeclarations(column, codeType);
                 }
             }
 
@@ -1081,31 +1104,53 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
 
         private string SetInitialValues(string propertyObjectPrefix)
         {
-            //TODO - Audit Trail not implemented
-            var setOriginalGuid = String.Format("\t\t\t" + propertyObjectPrefix + "._{0} = System.Guid.NewGuid();", _item.PrimaryKeyColumns.First().CamelName);
-
-            var returnVal = new StringBuilder();
-            if (_item.PrimaryKeyColumns.Count == 1 && ((Column)_item.PrimaryKeyColumns.First()).DataType == System.Data.SqlDbType.UniqueIdentifier)
+            try
             {
-                if (_item.PrimaryKeyColumns.First().DataType == System.Data.SqlDbType.UniqueIdentifier)
-                    returnVal.AppendLine(setOriginalGuid);
-            }
+                //TODO - Audit Trail not implemented
+                var setOriginalGuid = String.Format("\t\t\t" + propertyObjectPrefix + "._{0} = System.Guid.NewGuid();", _item.PrimaryKeyColumns.First().CamelName);
 
-            //DEFAULT PROPERTIES START
-            foreach (var column in _item.GeneratedColumns.Where(x => x.DataType != System.Data.SqlDbType.Timestamp).ToList())
-            {
-                if (!string.IsNullOrEmpty(column.Default))
+                var returnVal = new StringBuilder();
+                if (_item.PrimaryKeyColumns.Count == 1 && ((Column)_item.PrimaryKeyColumns.First()).DataType == System.Data.SqlDbType.UniqueIdentifier)
                 {
-                    var defaultValue = column.GetCodeDefault();
-
-                    //Write the actual code
-                    if (!string.IsNullOrEmpty(defaultValue))
-                        returnVal.AppendLine("			" + propertyObjectPrefix + "._" + column.CamelName + " = " + defaultValue + ";");
+                    if (_item.PrimaryKeyColumns.First().DataType == System.Data.SqlDbType.UniqueIdentifier)
+                        returnVal.AppendLine(setOriginalGuid);
                 }
-            }
-            //DEFAULT PROPERTIES END
 
-            return returnVal.ToString();
+                //DEFAULT PROPERTIES START
+                foreach (var column in _item.GeneratedColumns.Where(x => x.DataType != System.Data.SqlDbType.Timestamp).ToList())
+                {
+                    if (!string.IsNullOrEmpty(column.Default))
+                    {
+                        var defaultValue = column.GetCodeDefault();
+
+                        //Write the actual code
+                        if (!string.IsNullOrEmpty(defaultValue))
+                        {
+                            #region Type Table
+                            string pascalRoleName;
+                            Table typeTable = null;
+                            if (_item.IsColumnRelatedToTypeTable(column, out pascalRoleName) || (column.PrimaryKey && _item.TypedTable != TypedTableConstants.None))
+                            {
+                                typeTable = _item.GetRelatedTypeTableByColumn(column, out pascalRoleName);
+                                if (typeTable == null) typeTable = _item;
+                            }
+                            #endregion
+
+                            if (typeTable == null)
+                                returnVal.AppendLine("			" + propertyObjectPrefix + "._" + column.CamelName + " = " + defaultValue + ";");
+                            else
+                                returnVal.AppendLine("			" + propertyObjectPrefix + "._" + column.CamelName + " = (" + typeTable.PascalName + "Constants)(" + defaultValue + ");");
+                        }
+                    }
+                }
+                //DEFAULT PROPERTIES END
+
+                return returnVal.ToString();
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         private void AppendParented()
@@ -1216,6 +1261,17 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
             {
                 if (column.Generated)
                 {
+                    #region Type Tables
+                    string pascalRoleName;
+                    Table typeTable = null;
+                    if (_item.IsColumnRelatedToTypeTable(column, out pascalRoleName) || (column.PrimaryKey && _item.TypedTable != TypedTableConstants.None))
+                    {
+                        typeTable = _item.GetRelatedTypeTableByColumn(column, out pascalRoleName);
+                        if (typeTable == null) typeTable = _item;
+                    }
+                    #endregion
+
+
                     //If not the first one, add an 'ELSE' for speed
                     if (count == 0) sb.Append("			");
                     else sb.Append("			else ");
@@ -1233,6 +1289,13 @@ namespace nHydrate.Generator.EFCodeFirst.Generators.Entity
                     else if (column.IsReadOnly)
                     {
                         sb.AppendLine("				throw new Exception(\"Field '\" + field.ToString() + \"' is a read-only parameter and cannot be set!\");");
+                    }
+                    else if (typeTable != null)
+                    {
+                        if (column.AllowNull)
+                            sb.AppendLine("				this." + column.PascalName + " = (" + typeTable.PascalName + "Constants)GlobalValues.SetValueHelperIntNullableInternal(newValue);");
+                        else
+                            sb.AppendLine("				this." + column.PascalName + " = (" + typeTable.PascalName + "Constants)GlobalValues.SetValueHelperIntNotNullableInternal(newValue, \"Field '" + column.PascalName + "' does not allow null values!\");");
                     }
                     else
                     {
