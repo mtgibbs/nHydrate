@@ -648,6 +648,7 @@ namespace PROJECTNAMESPACE
             this.UseHash = true;
             this.SkipNormalize = false;
             this.SuppressUI = false;
+            this.SqlIsolationTransaction = false;
         }
 
         /// <summary>
@@ -665,6 +666,9 @@ namespace PROJECTNAMESPACE
 
         /// <summary />
         public bool SuppressUI { get; set; }
+
+        /// <summary />
+        public bool SqlIsolationTransaction { get; set; }
 
         /// <summary>
         /// Determines if this is a database upgrade

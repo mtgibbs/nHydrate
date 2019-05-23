@@ -556,7 +556,7 @@ namespace PROJECTNAMESPACE
                 {
                     if (setup.ShowSql && !string.IsNullOrEmpty(sql))
                     {
-                        var debugText = "[" + DateTime.Now.ToString() + "]\r\n";
+                        var debugText = "[" + DateTime.Now.ToString("HH:mm:ss.ffff") + "]\r\n";
                         const int MAX_SQL = 500;
                         var sqlLength = Math.Min(sql.Length, MAX_SQL);
                         debugText += sql.Substring(0, sqlLength);
@@ -571,7 +571,7 @@ namespace PROJECTNAMESPACE
 
                     if (!string.IsNullOrEmpty(setup.LogFilename))
                     {
-                        LoadSql(setup.LogFilename, sql, _timer.ElapsedMilliseconds);
+                        LogSql(setup.LogFilename, sql, _timer.ElapsedMilliseconds);
                     }
 
                     if (successOrderScripts != null && isBody)
@@ -612,7 +612,7 @@ namespace PROJECTNAMESPACE
             }
         }
 
-        private static void LoadSql(string fileName, string sql, long elapsed)
+        private static void LogSql(string fileName, string sql, long elapsed)
         {
             try
             {
