@@ -102,12 +102,7 @@ namespace PROJECTNAMESPACE
             {
                 if (commandParams.ContainsKey(PARAMKEYS_SHOWSQL))
                 {
-                    if (commandParams[PARAMKEYS_SHOWSQL].ToLower() == "true" || commandParams[PARAMKEYS_SHOWSQL].ToLower() == "1" || commandParams[PARAMKEYS_SHOWSQL].ToLower() == string.Empty)
-                        setup.ShowSql = true;
-                    else if (commandParams[PARAMKEYS_SHOWSQL].ToLower() == "false" || commandParams[PARAMKEYS_SHOWSQL].ToLower() == "0")
-                        setup.ShowSql = false;
-                    else
-                        throw new Exception("The /" + PARAMKEYS_SHOWSQL + " parameter must be set to 'true or false'.");
+                    setup.ShowSql = GetSetting(commandParams, new string[] { PARAMKEYS_SHOWSQL }, false);
                     paramUICount++;
                 }
 
@@ -116,9 +111,6 @@ namespace PROJECTNAMESPACE
                     var logFile = commandParams[PARAMKEYS_LOGSQL];
                     if (!string.IsNullOrEmpty(logFile))
                     {
-                        //var isValid = !string.IsNullOrEmpty(logFile) && logFile.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
-                        //if (!isValid)
-                        //    throw new Exception("The /" + PARAMKEYS_LOGSQL + " parameter must have a valid file name.");
                         if (File.Exists(logFile)) File.Delete(logFile);
                         setup.LogFilename = logFile;
                     }
@@ -139,30 +131,25 @@ namespace PROJECTNAMESPACE
 
                 if (commandParams.ContainsKey(PARAMKEYS_SKIPNORMALIZE))
                 {
-                    setup.SkipNormalize = true;
+                    setup.SkipNormalize = GetSetting(commandParams, new string[] { PARAMKEYS_SKIPNORMALIZE }, true);
                     paramUICount++;
                 }
 
                 if (commandParams.ContainsKey(PARAMKEYS_HASH))
                 {
-                    if (commandParams[PARAMKEYS_HASH].ToLower() == "true" || commandParams[PARAMKEYS_HASH].ToLower() == "1" || commandParams[PARAMKEYS_HASH].ToLower() == string.Empty)
-                        setup.UseHash = true;
-                    else if (commandParams[PARAMKEYS_HASH].ToLower() == "false" || commandParams[PARAMKEYS_HASH].ToLower() == "0")
-                        setup.UseHash = false;
-                    else
-                        throw new Exception("The /" + PARAMKEYS_HASH + " parameter must be set to 'true or false'.");
+                    setup.UseHash = GetSetting(commandParams, new string[] { PARAMKEYS_HASH }, false);
                     paramUICount++;
                 }
 
                 if (commandParams.ContainsKey(PARAMKEYS_CHECKONLY))
                 {
-                    setup.CheckOnly = true;
+                    setup.CheckOnly = GetSetting(commandParams, new string[] { PARAMKEYS_SKIPNORMALIZE }, true);
                     paramUICount++;
                 }
 
                 if (commandParams.ContainsKey(PARAMKEYS_QUIET))
                 {
-                    setup.SuppressUI = true;
+                    setup.SuppressUI = GetSetting(commandParams, new string[] { PARAMKEYS_QUIET }, true);
                     paramUICount++;
                 }
 
