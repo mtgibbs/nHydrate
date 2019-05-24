@@ -534,10 +534,21 @@ namespace PROJECTNAMESPACE
                 {
                     if (!setup.CheckOnly)
                     {
+                        //Create a new transaction if is isolocation or use current
+                        SqlTransaction localTransaction = null;
+                        if (setup.SqlIsolationTransaction)
+                            localTransaction = connection.BeginTransaction(System.Data.IsolationLevel.RepeatableRead);
+                        else
+                            localTransaction = transaction;
+
                         var dropCommand = new System.Data.SqlClient.SqlCommand(dropSQL, connection);
-                        dropCommand.Transaction = transaction;
+                        dropCommand.Transaction = localTransaction;
                         dropCommand.CommandTimeout = 0;
                         SqlServers.ExecuteCommand(dropCommand);
+
+                        //If transaction isolcation then commit after each execution
+                        if (setup.SqlIsolationTransaction)
+                            localTransaction.Commit();
                     }
                 }
                 catch (Exception ex)
@@ -548,10 +559,18 @@ namespace PROJECTNAMESPACE
             #endregion
 
             var command = new System.Data.SqlClient.SqlCommand(sql, connection);
-            command.Transaction = transaction;
-            command.CommandTimeout = 0;
             try
             {
+                //Create a new transaction if is isolocation or use current
+                SqlTransaction localTransaction = null;
+                if (setup.SqlIsolationTransaction)
+                    localTransaction = connection.BeginTransaction(System.Data.IsolationLevel.RepeatableRead);
+                else
+                    localTransaction = transaction;
+
+                command.Transaction = localTransaction;
+                command.CommandTimeout = 0;
+
                 if (!setup.CheckOnly)
                 {
                     if (setup.ShowSql && !string.IsNullOrEmpty(sql))
@@ -567,11 +586,16 @@ namespace PROJECTNAMESPACE
 
                     _timer.Restart();
                     SqlServers.ExecuteCommand(command);
+
+                    //If transaction isolcation then commit after each execution
+                    if (setup.SqlIsolationTransaction)
+                        localTransaction.Commit();
+
                     _timer.Stop();
 
                     if (!string.IsNullOrEmpty(setup.LogFilename))
                     {
-                        LogSql(setup.LogFilename, sql, _timer.ElapsedMilliseconds);
+                        LoadSql(setup.LogFilename, sql, _timer.ElapsedMilliseconds);
                     }
 
                     if (successOrderScripts != null && isBody)
@@ -612,7 +636,7 @@ namespace PROJECTNAMESPACE
             }
         }
 
-        private static void LogSql(string fileName, string sql, long elapsed)
+        private static void LoadSql(string fileName, string sql, long elapsed)
         {
             try
             {
@@ -1249,18 +1273,26 @@ namespace PROJECTNAMESPACE
             return retval;
         }
 
-        public static void Save(string connectionString, string modelKey, IEnumerable<nHydrateDbObject> list, System.Data.SqlClient.SqlTransaction transaction)
+        public static void Save(InstallSetup setup, string modelKey, IEnumerable<nHydrateDbObject> list, System.Data.SqlClient.SqlTransaction transaction)
         {
             System.Data.SqlClient.SqlConnection conn = null;
-            if (transaction == null)
+
+            //Create a new transaction if is isolocation or use current
+            SqlTransaction localTransaction = null;
+            var doCommit = false;
+            if (setup.SqlIsolationTransaction || transaction == null)
             {
-                conn = new System.Data.SqlClient.SqlConnection(connectionString);
+                conn = new System.Data.SqlClient.SqlConnection(setup.ConnectionString);
                 conn.Open();
+                localTransaction = conn.BeginTransaction(System.Data.IsolationLevel.RepeatableRead);
+                doCommit = true;
             }
             else
             {
-                conn = transaction.Connection;
+                localTransaction = transaction;
+                conn = localTransaction.Connection;
             }
+
             try
             {
                 //Create the table if need be
@@ -1277,7 +1309,7 @@ namespace PROJECTNAMESPACE
                                                                                          "[Status] [varchar](500) NULL," +
                                                                                          "[ModelKey] [uniqueidentifier] NOT NULL)", conn))
                 {
-                    command3.Transaction = transaction;
+                    command3.Transaction = localTransaction;
                     SqlServers.ExecuteCommand(command3);
                 }
 
@@ -1288,7 +1320,7 @@ namespace PROJECTNAMESPACE
                     sql.AppendLine("ALTER TABLE [dbo].[__nhydrateobjects] ADD [status] [Varchar] (500) NULL");
                     using (var command3 = new SqlCommand(sql.ToString(), conn))
                     {
-                        command3.Transaction = transaction;
+                        command3.Transaction = localTransaction;
                         SqlServers.ExecuteCommand(command3);
                     }
                 }
@@ -1298,7 +1330,7 @@ namespace PROJECTNAMESPACE
                     sql.AppendLine("delete from [__nhydrateobjects] where [id] IS NULL and ModelKey = '" + UpgradeInstaller.MODELKEY + "'");
                     using (var command3 = new SqlCommand(sql.ToString(), conn))
                     {
-                        command3.Transaction = transaction;
+                        command3.Transaction = localTransaction;
                         SqlServers.ExecuteCommand(command3);
                     }
                 }
@@ -1311,7 +1343,7 @@ namespace PROJECTNAMESPACE
                                                      "else " +
                                                      "insert into [__nhydrateobjects] ([id], [name], [type], [schema], [CreatedDate], [ModifiedDate], [Hash], [ModelKey], [Status]) values (@id, @name, @type, @schema, @CreatedDate, @ModifiedDate, @Hash, @ModelKey, @Status)", conn))
                     {
-                        command.Transaction = transaction;
+                        command.Transaction = localTransaction;
                         command.Parameters.Add(new SqlParameter() { DbType = DbType.Guid, Value = (item.id == Guid.Empty ? System.DBNull.Value : (object)item.id), ParameterName = "@id", IsNullable = true });
                         command.Parameters.Add(new SqlParameter() { DbType = DbType.Int64, Value = item.rowid, ParameterName = "@rowid", IsNullable = false });
                         command.Parameters.Add(new SqlParameter() { DbType = DbType.String, Value = item.name, ParameterName = "@name", IsNullable = false });
@@ -1326,6 +1358,9 @@ namespace PROJECTNAMESPACE
                     }
                 }
 
+                if (doCommit)
+                    localTransaction.Commit();
+
             }
             catch (Exception ex)
             {
@@ -1333,7 +1368,7 @@ namespace PROJECTNAMESPACE
             }
             finally
             {
-                if (transaction == null && conn != null)
+                if (doCommit && conn != null)
                 {
                     conn.Close();
                     conn.Dispose();

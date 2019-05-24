@@ -31,9 +31,9 @@ namespace PROJECTNAMESPACE
         internal static readonly GeneratedVersion _def_Version = new GeneratedVersion(-1, -1, -1, -1, -1);
 
         internal const string DEFAULT_NAMESPACE = "PROJECTNAMESPACE";
-        internal const string MODELKEY = "%MODELKEY%";
+        internal const string MODELKEY = "10757b7c-3ec0-4364-a8d6-73ff56c32318";
         private GeneratedVersion _previousVersion = null;
-        private static GeneratedVersion _upgradeToVersion = new GeneratedVersion("UPGRADE_VERSION");
+        private static GeneratedVersion _upgradeToVersion = new GeneratedVersion(0, 0, 0, 0, 58);
         private InstallSetup _setup = null;
         private System.Data.SqlClient.SqlConnection _connection;
         private System.Data.SqlClient.SqlTransaction _transaction;
@@ -304,8 +304,13 @@ namespace PROJECTNAMESPACE
             {
                 _connection = new System.Data.SqlClient.SqlConnection(setup.ConnectionString);
                 _connection.Open();
-                if (setup.UseTransaction)
+                if (setup.UseTransaction && !setup.SqlIsolationTransaction)
                     _transaction = _connection.BeginTransaction(System.Data.IsolationLevel.RepeatableRead);
+            }
+            else if (setup.SqlIsolationTransaction)
+            {
+                _connection = new System.Data.SqlClient.SqlConnection(setup.ConnectionString);
+                _connection.Open();
             }
             else //transaction is NOT null AND UseTransaction is TRUE
             {
@@ -486,7 +491,7 @@ namespace PROJECTNAMESPACE
                 #endregion
 
                 if (!setup.CheckOnly)
-                    nHydrateDbObject.Save(setup.ConnectionString, MODELKEY, _databaseItems, _transaction);
+                    nHydrateDbObject.Save(setup, MODELKEY, _databaseItems, _transaction);
 
                 //Do not commit if external transaction
                 if (_transaction != null && !setup.CheckOnly)

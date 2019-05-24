@@ -66,7 +66,8 @@ namespace PROJECTNAMESPACE
         private string PARAMKEYS_VERSIONWARN = "acceptwarnings";
         private string PARAMKEYS_SHOWSQL = "showsql";
         private string PARAMKEYS_LOGSQL = "logsql";
-        private string[] PARAMKEYS_TRAN = new string[] { "tranaction", "transaction" };
+        private string[] PARAMKEYS_TRAN = new string[] { "transaction" };
+        private string PARAMKEYS_TRANISOLATED = "transactionisolation";
         private string PARAMKEYS_SKIPNORMALIZE = "skipnormalize";
         private string PARAMKEYS_HASH = "usehash";
         private string PARAMKEYS_CHECKONLY = "checkonly";
@@ -127,6 +128,12 @@ namespace PROJECTNAMESPACE
                 if (commandParams.Any(x => PARAMKEYS_TRAN.Contains(x.Key)))
                 {
                     setup.UseTransaction = GetSetting(commandParams, PARAMKEYS_TRAN, true);
+                    paramUICount++;
+                }
+
+                if (commandParams.ContainsKey(PARAMKEYS_TRANISOLATED))
+                {
+                    setup.SqlIsolationTransaction = GetSetting(commandParams, new string[] { PARAMKEYS_TRANISOLATED }, false);
                     paramUICount++;
                 }
 
@@ -570,7 +577,7 @@ namespace PROJECTNAMESPACE
             var sb = new StringBuilder();
             sb.AppendLine("Creates or updates a Sql Server database");
             sb.AppendLine();
-            sb.AppendLine("InstallUtil.exe PROJECTNAMESPACE.dll [/upgrade] [/create] [/master:connectionstring] [/connectionstring:connectionstring] [/newdb:name] [/showsql:true|false] [/tranaction:true|false] [/skipnormalize] [/scriptfile:filename] [/scriptfileaction:append] [/checkonly] [/usehash] [/acceptwarnings:all|none|new|changed]");
+            sb.AppendLine("InstallUtil.exe PROJECTNAMESPACE.dll [/upgrade] [/create] [/master:connectionstring] [/connectionstring:connectionstring] [/newdb:name] [/showsql:true|false] [/transaction:true|false] [/skipnormalize] [/scriptfile:filename] [/scriptfileaction:append] [/checkonly] [/usehash] [/acceptwarnings:all|none|new|changed]");
             sb.AppendLine();
             sb.AppendLine("Providing no parameters will display the default UI.");
             sb.AppendLine();
@@ -592,7 +599,7 @@ namespace PROJECTNAMESPACE
             sb.AppendLine("/showsql:[true|false]");
             sb.AppendLine("Displays each SQL statement in the console window as its executed. Default is false.");
             sb.AppendLine();
-            sb.AppendLine("/tranaction:[true|false]");
+            sb.AppendLine("/transaction:[true|false]");
             sb.AppendLine("Specifies whether to use a database transaction. Outside of a transaction there is no rollback functionality if an error occurs! Default is true.");
             sb.AppendLine();
             sb.AppendLine("/skipnormalize");
@@ -648,7 +655,6 @@ namespace PROJECTNAMESPACE
             this.UseHash = true;
             this.SkipNormalize = false;
             this.SuppressUI = false;
-            this.SqlIsolationTransaction = false;
         }
 
         /// <summary>
@@ -703,7 +709,7 @@ namespace PROJECTNAMESPACE
 
         /// <summary />
         public string LogFilename { get; set; }
-        
+
         /// <summary />
         public bool CheckOnly { get; set; }
 
