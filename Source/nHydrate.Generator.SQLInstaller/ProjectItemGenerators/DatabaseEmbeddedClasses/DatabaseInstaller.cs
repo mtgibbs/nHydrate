@@ -137,7 +137,7 @@ namespace PROJECTNAMESPACE
 
                 if (commandParams.ContainsKey(PARAMKEYS_HASH))
                 {
-                    setup.UseHash = GetSetting(commandParams, new string[] { PARAMKEYS_HASH }, false);
+                    setup.UseHash = GetSetting(commandParams, new string[] { PARAMKEYS_HASH }, true);
                     paramUICount++;
                 }
 

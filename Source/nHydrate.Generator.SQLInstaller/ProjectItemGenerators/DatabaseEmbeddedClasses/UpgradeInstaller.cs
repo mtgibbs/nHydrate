@@ -31,9 +31,9 @@ namespace PROJECTNAMESPACE
         internal static readonly GeneratedVersion _def_Version = new GeneratedVersion(-1, -1, -1, -1, -1);
 
         internal const string DEFAULT_NAMESPACE = "PROJECTNAMESPACE";
-        internal const string MODELKEY = "10757b7c-3ec0-4364-a8d6-73ff56c32318";
+        internal const string MODELKEY = "MODEL_KEY";
         private GeneratedVersion _previousVersion = null;
-        private static GeneratedVersion _upgradeToVersion = new GeneratedVersion(0, 0, 0, 0, 58);
+        private static GeneratedVersion _upgradeToVersion = new GeneratedVersion(UPGRADE_VERSION);
         private InstallSetup _setup = null;
         private System.Data.SqlClient.SqlConnection _connection;
         private System.Data.SqlClient.SqlTransaction _transaction;

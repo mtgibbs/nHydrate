@@ -625,8 +625,8 @@ namespace nHydrate.Generator.SQLInstaller.ProjectItemGenerators.DatabaseEmbedded
 		{
 			var retVal = input;
 			retVal = retVal.Replace("Acme", _model.CompanyName);
-			retVal = retVal.Replace("%MODELKEY%", _model.Key);
-			retVal = retVal.Replace("%COLLATE%", _model.Database.Collate);
+			retVal = retVal.Replace("MODEL_KEY", _model.Key);
+			retVal = retVal.Replace("_COLLATE", _model.Database.Collate);
 			retVal = retVal.Replace("ZZ", _model.CompanyAbbreviation);
 			var versionNumbers = _model.Version.Split('.');
 
@@ -636,7 +636,7 @@ namespace nHydrate.Generator.SQLInstaller.ProjectItemGenerators.DatabaseEmbedded
 			var build = int.Parse(versionNumbers[3]);
 			var generated = _model.GeneratedVersion;
 
-			retVal = retVal.Replace("\"UPGRADE_VERSION\"", major + ", " + minor + ", " + revision + ", " + build + ", " + generated);
+			retVal = retVal.Replace("UPGRADE_VERSION", major + ", " + minor + ", " + revision + ", " + build + ", " + generated);
 			retVal = retVal.Replace("DATABASENAME", _model.Database.DatabaseName);
 			retVal = retVal.Replace("PROJECTNAMESPACE", this.GetLocalNamespace());
 			retVal = retVal.Replace("DATABASETYPE", _model.SQLServerType.ToString());
