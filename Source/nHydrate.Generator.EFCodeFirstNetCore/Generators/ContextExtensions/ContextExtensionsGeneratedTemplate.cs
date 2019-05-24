@@ -735,6 +735,7 @@ namespace nHydrate.Generator.EFCodeFirstNetCore.Generators.ContextExtensions
             sb.AppendLine("		}");
             sb.AppendLine();
             sb.AppendLine("		#endregion");
+            sb.AppendLine();
 
             #endregion
 

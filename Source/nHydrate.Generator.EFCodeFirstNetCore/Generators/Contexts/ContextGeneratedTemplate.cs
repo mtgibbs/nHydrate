@@ -437,7 +437,7 @@ namespace nHydrate.Generator.EFCodeFirstNetCore.Generators.Contexts
                         if (!column.AllowNull)
                             sb.Append(".IsRequired()");
                         if (column.Identity == IdentityTypeConstants.Database && column.IsIntegerType)
-                            sb.Append(".UseSqlServerIdentityColumn()");
+                            sb.Append(".ValueGeneratedOnAdd()");
 
                         if (column.IsTextType && column.DataType != System.Data.SqlDbType.Xml) sb.Append(".HasMaxLength(" + column.GetAnnotationStringLength() + ")");
                         if (column.DataType == System.Data.SqlDbType.VarChar) sb.Append(".HasColumnType(\"VARCHAR(" + column.GetAnnotationStringLength() + ")\")");
